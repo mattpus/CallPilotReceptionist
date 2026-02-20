@@ -1,0 +1,190 @@
+@startuml Provider Abstraction
+
+!define INTERFACE interface
+!define CLASS class
+
+skinparam class {
+  BackgroundColor<<interface>> #E1F5FE
+  BackgroundColor<<implementation>> #F3E5F5
+  BackgroundColor<<factory>> #FFF9C4
+  BackgroundColor<<service>> #E8F5E9
+  BorderColor #2688d4
+}
+
+title Provider Abstraction Architecture - Easy Provider Switching
+
+package "Domain Layer" {
+  interface VoiceProvider <<interface>> {
+    + InitiateCall(request) CallSession
+    + HandleWebhook(payload, signature) CallEvent
+    + GetCallDetails(callID) CallDetails
+    + GetTranscript(callID) []Message
+    + UpdateCall(callID, updates) error
+    + GetCallRecording(callID) Recording
+    + ListCalls(businessID, filters) []CallSummary
+    + CancelCall(callID) error
+    + GetProviderName() string
+  }
+  
+  note right of VoiceProvider
+    **Core Abstraction**
+    All voice AI operations
+    defined as interface.
+    Business logic depends
+    on interface, not
+    implementations.
+  end note
+}
+
+package "Infrastructure Layer" {
+  class VapiProvider <<implementation>> {
+    - apiKey: string
+    - apiURL: string
+    - webhookSecret: string
+    - httpClient: *http.Client
+    - logger: *zerolog.Logger
+    --
+    + InitiateCall(request) CallSession
+    + HandleWebhook(payload, signature) CallEvent
+    + GetCallDetails(callID) CallDetails
+    + GetTranscript(callID) []Message
+    + UpdateCall(callID, updates) error
+    + GetCallRecording(callID) Recording
+    + ListCalls(businessID, filters) []CallSummary
+    + CancelCall(callID) error
+    + GetProviderName() string
+    - validateSignature(payload, signature) bool
+    - mapStatus(vapiStatus) string
+  }
+  
+  note right of VapiProvider
+    **Vapi AI Implementation**
+    - HTTP API client
+    - Webhook signature validation
+    - Status mapping
+    - Error handling
+  end note
+  
+  class TwilioProvider <<implementation>> {
+    - accountSID: string
+    - authToken: string
+    - apiURL: string
+    - httpClient: *http.Client
+    --
+    + InitiateCall(request) CallSession
+    + HandleWebhook(payload, signature) CallEvent
+    + GetCallDetails(callID) CallDetails
+    + GetTranscript(callID) []Message
+    + UpdateCall(callID, updates) error
+    + GetCallRecording(callID) Recording
+    + ListCalls(businessID, filters) []CallSummary
+    + CancelCall(callID) error
+    + GetProviderName() string
+    - validateWebhook() bool
+  }
+  
+  note right of TwilioProvider
+    **Example Alternative Provider**
+    Same interface, different
+    implementation. Can be
+    added without changing
+    any business logic.
+  end note
+  
+  class ProviderFactory <<factory>> {
+    - config: *config.Config
+    - logger: *zerolog.Logger
+    --
+    + NewVoiceProvider(providerType) VoiceProvider
+    - createVapiProvider() *VapiProvider
+    - createTwilioProvider() *TwilioProvider
+  }
+  
+  note bottom of ProviderFactory
+    **Factory Pattern**
+    Creates provider based on
+    configuration. Switch providers
+    via config change:
+    
+    VOICE_PROVIDER=vapi
+    or
+    VOICE_PROVIDER=twilio
+  end note
+}
+
+package "Application Layer" {
+  class CallService <<service>> {
+    - voiceProvider: VoiceProvider
+    - callRepo: CallRepository
+    - transcriptRepo: TranscriptRepository
+    - logger: *zerolog.Logger
+    --
+    + InitiateCall(businessID, request) CallResponse
+    + HandleWebhook(payload, signature) error
+    + GetCall(businessID, callID) CallResponse
+    + GetTranscript(callID) TranscriptResponse
+    + ListCalls(businessID, filters) []CallResponse
+  }
+  
+  note right of CallService
+    **Provider-Agnostic Service**
+    Depends on VoiceProvider
+    interface, not concrete
+    implementations. Works
+    with any provider.
+  end note
+}
+
+package "Configuration" {
+  class Config {
+    + VoiceProvider: string
+    + VapiAPIKey: string
+    + VapiWebhookSecret: string
+    + TwilioAccountSID: string
+    + TwilioAuthToken: string
+  }
+}
+
+' Relationships
+VapiProvider ..|> VoiceProvider : implements
+TwilioProvider ..|> VoiceProvider : implements
+ProviderFactory ..> VapiProvider : creates
+ProviderFactory ..> TwilioProvider : creates
+ProviderFactory --> Config : reads
+CallService --> VoiceProvider : uses
+ProviderFactory ..> VoiceProvider : returns
+
+' Dependency injection
+note as N1
+  **Dependency Injection in main.go**
+  
+  provider := factory.NewVoiceProvider(config.VoiceProvider)
+  callService := services.NewCallService(
+    provider, // injected interface
+    callRepo,
+    transcriptRepo,
+    logger,
+  )
+end note
+
+' Switching process
+note as N2
+  **To Switch from Vapi to Another Provider:**
+  
+  1. Implement VoiceProvider interface
+  2. Add to ProviderFactory
+  3. Update Config/environment:
+     VOICE_PROVIDER=new_provider
+     NEW_PROVIDER_API_KEY=...
+  
+  **No changes needed to:**
+  - CallService
+  - Handlers
+  - Domain entities
+  - Database schema
+  - API endpoints
+  
+  **Zero business logic changes!**
+end note
+
+@enduml

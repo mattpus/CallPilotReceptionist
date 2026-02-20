@@ -1,0 +1,177 @@
+@startuml Deployment Architecture
+
+!define CONTAINER node
+!define DATABASE database
+
+skinparam node {
+  BackgroundColor #E3F2FD
+  BorderColor #1976D2
+}
+
+skinparam database {
+  BackgroundColor #FFF9C4
+  BorderColor #F57C00
+}
+
+skinparam cloud {
+  BackgroundColor #F3E5F5
+  BorderColor #7B1FA2
+}
+
+title Deployment Architecture - Docker & Cloud Infrastructure
+
+cloud "Internet" {
+  actor "Business Users" as Users
+  actor "End Customers" as Customers
+}
+
+package "Docker Environment" {
+  CONTAINER "Load Balancer\n(Nginx/Traefik)" as LB {
+    component [HTTPS\nTermination] as HTTPS
+    component [Rate\nLimiting] as RateLimit
+  }
+  
+  CONTAINER "Go Application\n(Container 1)" as App1 {
+    component [Server\n:8080] as Server1
+    component [Health Check\n/health] as Health1
+  }
+  
+  CONTAINER "Go Application\n(Container 2)" as App2 {
+    component [Server\n:8080] as Server2
+    component [Health Check\n/health] as Health2
+  }
+  
+  CONTAINER "Go Application\n(Container 3)" as App3 {
+    component [Server\n:8080] as Server3
+    component [Health Check\n/health] as Health3
+  }
+}
+
+cloud "External Services" {
+  CONTAINER "Vapi AI API" as VapiAI {
+    component [Voice\nProcessing] as VoiceAPI
+    component [Webhook\nDelivery] as WebhookSender
+  }
+  
+  DATABASE "Supabase" as Supabase {
+    component [PostgreSQL 15] as Postgres
+    component [Connection\nPooler] as Pooler
+    component [Realtime\nSubscriptions] as Realtime
+  }
+}
+
+CONTAINER "Monitoring & Logging" as Monitor {
+  component [Prometheus] as Prometheus
+  component [Grafana] as Grafana
+  component [Logs\nAggregator] as Logs
+}
+
+DATABASE "Redis\n(Optional)" as Redis {
+  component [Session\nCache] as SessionCache
+  component [Rate Limit\nCounter] as RateLimitCache
+}
+
+' User connections
+Users --> LB : HTTPS
+Customers --> VapiAI : Phone calls
+
+' Load balancer to apps
+LB --> App1 : Distribute
+LB --> App2 : Distribute
+LB --> App3 : Distribute
+
+' Apps to external services
+App1 --> Supabase : Database queries
+App2 --> Supabase : Database queries
+App3 --> Supabase : Database queries
+
+App1 --> VapiAI : API calls
+App2 --> VapiAI : API calls
+App3 --> VapiAI : API calls
+
+VapiAI --> LB : Webhook events
+
+' Optional Redis
+App1 ..> Redis : Cache\n(optional)
+App2 ..> Redis : Cache\n(optional)
+App3 ..> Redis : Cache\n(optional)
+
+' Monitoring
+App1 --> Monitor : Metrics & Logs
+App2 --> Monitor : Metrics & Logs
+App3 --> Monitor : Metrics & Logs
+
+note right of LB
+  **Load Balancer Configuration**
+  - SSL/TLS termination
+  - Health check: /health endpoint
+  - Rate limiting per IP
+  - Sticky sessions (optional)
+  - Request timeout: 30s
+end note
+
+note right of App1
+  **Go Application**
+  - Port: 8080
+  - Replicas: 3 (horizontal scaling)
+  - Health check: /health
+  - Readiness: /ready
+  - Graceful shutdown: 30s
+  - Environment: Docker container
+  
+  **Environment Variables:**
+  - DATABASE_URL
+  - VAPI_API_KEY
+  - JWT_SECRET
+  - VOICE_PROVIDER=vapi
+end note
+
+note left of Supabase
+  **Supabase Configuration**
+  - PostgreSQL 15
+  - Connection pooling enabled
+  - Max connections: 100
+  - SSL required
+  - Backup: Daily automated
+  - Point-in-time recovery
+  
+  **Tables:**
+  - businesses
+  - users
+  - calls
+  - interactions
+  - transcripts
+  - appointments
+end note
+
+note left of VapiAI
+  **Vapi AI Integration**
+  - REST API
+  - Webhook delivery to:
+    /api/v1/webhooks/vapi
+  - Signature validation
+  - Events: call.started,
+    call.ended, call.failed
+end note
+
+note bottom of Monitor
+  **Monitoring Stack**
+  - Prometheus: Metrics collection
+  - Grafana: Visualization
+  - Custom metrics:
+    * Active calls
+    * API latency
+    * Error rate
+    * Database connections
+end note
+
+note bottom of Redis
+  **Redis (Optional)**
+  Used for:
+  - JWT token blacklist (logout)
+  - Rate limiting counters
+  - Session caching
+  - Real-time call status
+end note
+
+@enduml

@@ -1,0 +1,193 @@
+@startuml Authentication Flow
+
+actor "Business User" as User
+participant "Dashboard" as Dashboard
+participant "API\n(Router)" as API
+participant "Auth\nMiddleware" as AuthMW
+participant "Auth\nHandler" as Handler
+participant "Auth\nService" as Service
+participant "User\nRepository" as UserRepo
+participant "Business\nRepository" as BizRepo
+database "Supabase" as DB
+
+title Authentication & Authorization Flow
+
+== Registration ==
+
+User -> Dashboard: Fill registration form
+Dashboard -> API: POST /api/v1/auth/register
+note right
+  {
+    "businessName": "Smith Dental",
+    "email": "owner@smithdental.com",
+    "password": "SecurePass123!",
+    "businessType": "dentist",
+    "phone": "+1234567890"
+  }
+end note
+
+API -> Handler: Register()
+
+Handler -> Service: Register(request)
+
+Service -> Service: Validate input
+note right
+  - Email format
+  - Password strength
+  - Phone format
+end note
+
+Service -> UserRepo: GetByEmail(email)
+UserRepo -> DB: SELECT * FROM users
+DB --> UserRepo: nil (not found)
+UserRepo --> Service: nil
+
+Service -> Service: Hash password\n(bcrypt, cost=10)
+
+Service -> BizRepo: Create(business)
+BizRepo -> DB: INSERT INTO businesses
+DB --> BizRepo: business created
+BizRepo --> Service: Business entity
+
+Service -> UserRepo: Create(user)
+UserRepo -> DB: INSERT INTO users
+DB --> UserRepo: user created
+UserRepo --> Service: User entity
+
+Service -> Service: Generate JWT tokens
+note right
+  **Access Token:**
+  - Expiry: 15 minutes
+  - Claims: userID, businessID,
+    email, role
+  
+  **Refresh Token:**
+  - Expiry: 7 days
+  - Claims: userID
+end note
+
+Service --> Handler: AuthResponse
+Handler --> API: 201 Created
+API --> Dashboard: {access_token, refresh_token}
+Dashboard --> User: Registration successful
+
+== Login ==
+
+User -> Dashboard: Enter credentials
+Dashboard -> API: POST /api/v1/auth/login
+note right
+  {
+    "email": "owner@smithdental.com",
+    "password": "SecurePass123!"
+  }
+end note
+
+API -> Handler: Login()
+Handler -> Service: Login(credentials)
+
+Service -> UserRepo: GetByEmail(email)
+UserRepo -> DB: SELECT * FROM users
+DB --> UserRepo: user record
+UserRepo --> Service: User entity
+
+Service -> Service: Compare password\n(bcrypt.Compare)
+
+alt Password match
+  Service -> Service: Generate JWT tokens
+  Service --> Handler: AuthResponse
+  Handler --> API: 200 OK
+  API --> Dashboard: {access_token, refresh_token}
+  Dashboard --> User: Login successful
+else Password mismatch
+  Service --> Handler: Error(UNAUTHORIZED)
+  Handler --> API: 401 Unauthorized
+  API --> Dashboard: Error
+  Dashboard --> User: Invalid credentials
+end
+
+== Protected Endpoint Access ==
+
+User -> Dashboard: Request data
+Dashboard -> API: GET /api/v1/businesses/me
+note right
+  Authorization: Bearer <access_token>
+end note
+
+API -> AuthMW: Authenticate()
+
+AuthMW -> AuthMW: Extract Bearer token
+AuthMW -> Service: ValidateToken(token)
+
+Service -> Service: Parse JWT
+Service -> Service: Verify signature\n& expiry
+
+alt Token valid
+  Service --> AuthMW: Claims
+  AuthMW -> AuthMW: Store in context:\n- UserID\n- BusinessID\n- Email\n- Role
+  
+  AuthMW -> Handler: Request with context
+  Handler -> Handler: GetBusinessID(ctx)
+  Handler --> API: 200 OK with data
+  API --> Dashboard: Business data
+  Dashboard --> User: Display data
+else Token expired
+  Service --> AuthMW: Error(TOKEN_EXPIRED)
+  AuthMW --> API: 401 Unauthorized
+  API --> Dashboard: Error
+  Dashboard -> Dashboard: Refresh token flow
+else Token invalid
+  Service --> AuthMW: Error(INVALID_TOKEN)
+  AuthMW --> API: 401 Unauthorized
+  API --> Dashboard: Error
+  Dashboard --> User: Please login again
+end
+
+== Token Refresh ==
+
+Dashboard -> API: POST /api/v1/auth/refresh
+note right
+  {
+    "refresh_token": "<refresh_token>"
+  }
+end note
+
+API -> Handler: Refresh()
+Handler -> Service: RefreshToken(token)
+
+Service -> Service: Validate refresh token
+
+alt Refresh token valid
+  Service -> UserRepo: GetByID(userID)
+  UserRepo -> DB: SELECT * FROM users
+  DB --> UserRepo: user
+  UserRepo --> Service: User entity
+  
+  Service -> Service: Generate new\naccess token
+  Service --> Handler: {new_access_token}
+  Handler --> API: 200 OK
+  API --> Dashboard: New access token
+  Dashboard --> User: Session refreshed
+else Refresh token expired
+  Service --> Handler: Error(TOKEN_EXPIRED)
+  Handler --> API: 401 Unauthorized
+  API --> Dashboard: Error
+  Dashboard --> User: Please login again
+end
+
+== Authorization Check ==
+
+note over AuthMW, Handler
+  For role-based access control
+end note
+
+Handler -> Handler: GetRole(ctx)
+
+alt Role authorized
+  Handler -> Handler: Process request
+else Role not authorized
+  Handler --> API: 403 Forbidden
+  API --> Dashboard: Permission denied
+  Dashboard --> User: Access denied
+end
+
+@enduml

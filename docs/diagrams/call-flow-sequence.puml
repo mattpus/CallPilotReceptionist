@@ -1,0 +1,154 @@
+@startuml Call Initiation Flow
+
+actor "Business User" as User
+participant "Dashboard" as Dashboard
+participant "API Gateway" as API
+participant "CallHandler" as Handler
+participant "CallService" as Service
+participant "CallRepository" as Repo
+participant "VoiceProvider" as Provider
+participant "Vapi AI" as Vapi
+database "Supabase" as DB
+
+title Call Initiation & Webhook Processing Flow
+
+== Authentication ==
+User -> Dashboard: Login
+Dashboard -> API: POST /api/v1/auth/login
+API -> Handler: login(email, password)
+Handler -> Service: Login()
+Service --> Handler: {access_token, refresh_token}
+Handler --> API: 200 OK
+API --> Dashboard: tokens
+Dashboard --> User: Logged in
+
+== Initiate Call ==
+User -> Dashboard: Click "Make Call"
+Dashboard -> API: POST /api/v1/calls\n{phone_number}
+note right
+  Authorization: Bearer <token>
+end note
+
+API -> Handler: initiateCall()
+Handler -> Service: InitiateCall(businessID, request)
+
+Service -> Repo: Create(call)
+Repo -> DB: INSERT INTO calls
+DB --> Repo: call saved
+Repo --> Service: call entity
+
+Service -> Provider: InitiateCall(request)
+Provider -> Vapi: POST /call/phone
+note right
+  {
+    "phoneNumber": "+1234567890",
+    "assistantId": "...",
+    "metadata": {...}
+  }
+end note
+
+Vapi --> Provider: {id, status}
+Provider --> Service: CallSession
+
+Service -> Repo: Update(call with provider_id)
+Repo -> DB: UPDATE calls
+DB --> Repo: updated
+
+Service --> Handler: CallResponse
+Handler --> API: 201 Created
+API --> Dashboard: Call initiated
+Dashboard --> User: "Call started..."
+
+== Vapi Webhook Processing ==
+
+Vapi -> API: POST /api/v1/webhooks/vapi\n(call.started event)
+note right
+  X-Vapi-Signature: hmac...
+  {
+    "type": "call.started",
+    "callId": "vapi-123",
+    "status": "in_progress"
+  }
+end note
+
+API -> Handler: handleWebhook()
+Handler -> Service: HandleWebhook(payload, signature)
+
+Service -> Provider: HandleWebhook(payload, signature)
+Provider -> Provider: Validate Signature
+Provider --> Service: CallEvent
+
+Service -> Repo: GetByProviderCallID(callId)
+Repo -> DB: SELECT * FROM calls
+DB --> Repo: call
+Repo --> Service: Call entity
+
+Service -> Service: UpdateStatus(in_progress)
+
+Service -> Repo: Update(call)
+Repo -> DB: UPDATE calls SET status='in_progress'
+DB --> Repo: updated
+
+Service --> Handler: success
+Handler --> API: 200 OK
+API --> Vapi: Webhook processed
+
+== Call Completion ==
+
+Vapi -> API: POST /api/v1/webhooks/vapi\n(call.ended event)
+API -> Handler: handleWebhook()
+Handler -> Service: HandleWebhook()
+
+Service -> Provider: HandleWebhook()
+Provider --> Service: CallEvent(type: ended)
+
+Service -> Repo: Update(call status=completed)
+Repo -> DB: UPDATE calls
+DB --> Repo: updated
+
+Service -> Service: Start async\ntranscript fetch
+activate Service
+
+Service -> Provider: GetTranscript(callId)
+Provider -> Vapi: GET /call/{id}
+Vapi --> Provider: {messages: [...]}
+Provider --> Service: Transcript
+
+Service -> Repo: CreateBatch(transcripts)
+Repo -> DB: INSERT INTO transcripts
+DB --> Repo: saved
+
+deactivate Service
+
+Service --> Handler: success
+Handler --> API: 200 OK
+
+== User Views Call ==
+
+User -> Dashboard: View call details
+Dashboard -> API: GET /api/v1/calls/{id}
+API -> Handler: getCall()
+Handler -> Service: GetCall(businessID, callID)
+Service -> Repo: GetByID(callID)
+Repo -> DB: SELECT * FROM calls
+DB --> Repo: call
+Repo --> Service: Call entity
+Service --> Handler: CallResponse
+Handler --> API: 200 OK
+API --> Dashboard: Call details
+Dashboard --> User: Show call info
+
+User -> Dashboard: View transcript
+Dashboard -> API: GET /api/v1/calls/{id}/transcript
+API -> Handler: getTranscript()
+Handler -> Service: GetTranscript()
+Service -> Repo: GetByCallID(callID)
+Repo -> DB: SELECT * FROM transcripts
+DB --> Repo: transcripts
+Repo --> Service: [Transcript]
+Service --> Handler: TranscriptResponse
+Handler --> API: 200 OK
+API --> Dashboard: Transcript
+Dashboard --> User: Show conversation
+
+@enduml

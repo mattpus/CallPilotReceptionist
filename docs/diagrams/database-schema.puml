@@ -1,0 +1,165 @@
+@startuml Database Schema
+
+!define table(x) class x << (T,#FFAAAA) >>
+!define primary_key(x) <u>x</u>
+!define foreign_key(x) <i>x</i>
+
+hide methods
+hide stereotypes
+
+skinparam class {
+  BackgroundColor #FFFFCC
+  ArrowColor #2688d4
+  BorderColor #2688d4
+}
+
+title Vapi AI Integration - Database Schema
+
+table(businesses) {
+  primary_key(id): UUID
+  --
+  name: VARCHAR(255)
+  type: VARCHAR(100)
+  phone: VARCHAR(20)
+  settings: JSONB
+  created_at: TIMESTAMP
+  updated_at: TIMESTAMP
+}
+
+table(users) {
+  primary_key(id): UUID
+  --
+  foreign_key(business_id): UUID
+  email: VARCHAR(255) UNIQUE
+  password_hash: VARCHAR(255)
+  role: VARCHAR(50)
+  created_at: TIMESTAMP
+}
+
+table(calls) {
+  primary_key(id): UUID
+  --
+  foreign_key(business_id): UUID
+  provider_call_id: VARCHAR(255)
+  caller_phone: VARCHAR(20)
+  duration: INTEGER
+  status: VARCHAR(50)
+  cost: DECIMAL(10,4)
+  started_at: TIMESTAMP
+  ended_at: TIMESTAMP
+  created_at: TIMESTAMP
+}
+
+table(interactions) {
+  primary_key(id): UUID
+  --
+  foreign_key(call_id): UUID
+  type: VARCHAR(100)
+  content: JSONB
+  timestamp: TIMESTAMP
+  created_at: TIMESTAMP
+}
+
+table(transcripts) {
+  primary_key(id): UUID
+  --
+  foreign_key(call_id): UUID
+  role: VARCHAR(50)
+  message: TEXT
+  timestamp: TIMESTAMP
+  created_at: TIMESTAMP
+}
+
+table(appointments) {
+  primary_key(id): UUID
+  --
+  foreign_key(call_id): UUID
+  foreign_key(business_id): UUID
+  customer_name: VARCHAR(255)
+  customer_phone: VARCHAR(20)
+  requested_date: DATE
+  requested_time: VARCHAR(50)
+  service_type: VARCHAR(255)
+  notes: TEXT
+  status: VARCHAR(50)
+  extracted_at: TIMESTAMP
+  confirmed_at: TIMESTAMP
+  created_at: TIMESTAMP
+}
+
+' Relationships
+businesses "1" -- "0..*" users : has
+businesses "1" -- "0..*" calls : receives
+businesses "1" -- "0..*" appointments : has
+
+calls "1" -- "0..*" interactions : contains
+calls "1" -- "0..*" transcripts : has
+calls "1" -- "0..1" appointments : may generate
+
+' Indexes
+note right of businesses
+  **Indexes:**
+  - PRIMARY KEY (id)
+  - INDEX (phone)
+end note
+
+note right of users
+  **Indexes:**
+  - PRIMARY KEY (id)
+  - UNIQUE INDEX (email)
+  - INDEX (business_id)
+end note
+
+note right of calls
+  **Indexes:**
+  - PRIMARY KEY (id)
+  - INDEX (business_id)
+  - INDEX (provider_call_id)
+  - INDEX (status)
+  - INDEX (created_at DESC)
+  - INDEX (started_at DESC)
+end note
+
+note right of interactions
+  **Indexes:**
+  - PRIMARY KEY (id)
+  - INDEX (call_id)
+  - INDEX (type)
+end note
+
+note right of transcripts
+  **Indexes:**
+  - PRIMARY KEY (id)
+  - INDEX (call_id)
+  - INDEX (timestamp)
+end note
+
+note right of appointments
+  **Indexes:**
+  - PRIMARY KEY (id)
+  - INDEX (call_id)
+  - INDEX (business_id)
+  - INDEX (status)
+  - INDEX (requested_date)
+end note
+
+note bottom of calls
+  **Call Status Values:**
+  - initiated
+  - ringing
+  - in_progress
+  - completed
+  - failed
+  - no_answer
+  - busy
+end note
+
+note bottom of appointments
+  **Appointment Status Values:**
+  - pending
+  - confirmed
+  - cancelled
+  - completed
+end note
+
+@enduml

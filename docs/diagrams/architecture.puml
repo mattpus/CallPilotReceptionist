@@ -1,0 +1,178 @@
+@startuml Vapi AI Integration - System Architecture
+
+!define RECTANGLE class
+
+skinparam componentStyle rectangle
+skinparam backgroundColor #FEFEFE
+skinparam component {
+  BackgroundColor<<external>> #E3F2FD
+  BackgroundColor<<domain>> #FFF3E0
+  BackgroundColor<<application>> #E8F5E9
+  BackgroundColor<<infrastructure>> #F3E5F5
+  BackgroundColor<<api>> #FCE4EC
+}
+
+title Vapi AI Integration - System Architecture (Hexagonal/Ports & Adapters)
+
+' External Systems
+package "External Systems" <<external>> {
+  component [Vapi AI\nVoice Provider] as VapiAI
+  component [Supabase\nPostgreSQL] as Supabase
+  component [Dashboard\nFrontend] as Dashboard
+}
+
+' API Layer
+package "API Layer" <<api>> {
+  component [HTTP Router\n(Gorilla Mux)] as Router
+  component [Auth Handler] as AuthHandler
+  component [Business Handler] as BusinessHandler
+  component [Call Handler] as CallHandler
+  component [Interaction Handler] as InteractionHandler
+  component [Analytics Handler] as AnalyticsHandler
+}
+
+' Middleware
+package "Middleware" <<infrastructure>> {
+  component [JWT Auth\nMiddleware] as AuthMW
+  component [Logging\nMiddleware] as LoggingMW
+  component [CORS\nMiddleware] as CORSMW
+  component [Error\nMiddleware] as ErrorMW
+}
+
+' Application Layer
+package "Application Layer" <<application>> {
+  component [Auth Service] as AuthService
+  component [Business Service] as BusinessService
+  component [Call Service] as CallService
+  component [Interaction Service] as InteractionService
+  component [Analytics Service] as AnalyticsService
+}
+
+' Domain Layer
+package "Domain Layer" <<domain>> {
+  component [Business Entity] as BusinessEntity
+  component [Call Entity] as CallEntity
+  component [User Entity] as UserEntity
+  component [Interaction Entity] as InteractionEntity
+  component [Appointment Entity] as AppointmentEntity
+  component [VoiceProvider\nInterface] as VoiceProviderInterface
+  component [Domain Errors] as DomainErrors
+}
+
+' Infrastructure Layer
+package "Infrastructure Layer" <<infrastructure>> {
+  component [Vapi Provider\nImplementation] as VapiProvider
+  component [Provider Factory] as ProviderFactory
+  component [Business Repository] as BusinessRepo
+  component [User Repository] as UserRepo
+  component [Call Repository] as CallRepo
+  component [Interaction Repository] as InteractionRepo
+  component [Transcript Repository] as TranscriptRepo
+  component [Appointment Repository] as AppointmentRepo
+  component [Database Manager] as DBManager
+}
+
+' Support
+package "Support" {
+  component [Config Manager] as Config
+  component [Logger] as Logger
+}
+
+' Connections - External to API
+Dashboard --> Router : HTTP Requests
+Router --> VapiAI : Webhook Events
+
+' Connections - Router to Middleware
+Router ..> AuthMW
+Router ..> LoggingMW
+Router ..> CORSMW
+Router ..> ErrorMW
+
+' Connections - Router to Handlers
+Router --> AuthHandler
+Router --> BusinessHandler
+Router --> CallHandler
+Router --> InteractionHandler
+Router --> AnalyticsHandler
+
+' Connections - Handlers to Services
+AuthHandler --> AuthService
+BusinessHandler --> BusinessService
+CallHandler --> CallService
+InteractionHandler --> InteractionService
+AnalyticsHandler --> AnalyticsService
+
+' Connections - Services to Repositories
+AuthService --> UserRepo
+AuthService --> BusinessRepo
+BusinessService --> BusinessRepo
+CallService --> CallRepo
+CallService --> TranscriptRepo
+CallService --> InteractionRepo
+InteractionService --> InteractionRepo
+InteractionService --> AppointmentRepo
+InteractionService --> CallRepo
+AnalyticsService --> CallRepo
+AnalyticsService --> AppointmentRepo
+
+' Connections - Services to Provider
+CallService --> VoiceProviderInterface
+
+' Connections - Infrastructure to External
+VapiProvider ..|> VoiceProviderInterface : implements
+ProviderFactory ..> VapiProvider : creates
+ProviderFactory --> Config
+
+BusinessRepo --> DBManager
+UserRepo --> DBManager
+CallRepo --> DBManager
+InteractionRepo --> DBManager
+TranscriptRepo --> DBManager
+AppointmentRepo --> DBManager
+DBManager --> Supabase
+
+' Connections - Services to Domain
+AuthService ..> UserEntity : uses
+AuthService ..> BusinessEntity : uses
+BusinessService ..> BusinessEntity : uses
+CallService ..> CallEntity : uses
+InteractionService ..> InteractionEntity : uses
+InteractionService ..> AppointmentEntity : uses
+AnalyticsService ..> CallEntity : uses
+
+' Connections - Middleware
+AuthMW --> AuthService : validates JWT
+LoggingMW --> Logger
+ErrorMW --> DomainErrors
+
+' Connections - Support
+AuthService --> Config
+CallService --> Logger
+VapiProvider --> VapiAI : HTTP API
+
+note right of VoiceProviderInterface
+  **Provider Abstraction**
+  Easy to switch from Vapi AI
+  to any other voice provider
+  by implementing this interface
+end note
+
+note right of Router
+  **20+ REST Endpoints**
+  - Authentication
+  - Call Management
+  - Appointments
+  - Analytics
+end note
+
+note bottom of DBManager
+  **6 Tables**
+  - businesses
+  - users
+  - calls
+  - interactions
+  - transcripts
+  - appointments
+end note
+
+@enduml
