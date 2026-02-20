@@ -36,7 +36,7 @@ func (f *ProviderFactory) CreateProvider(providerType ProviderType) (providers.V
 		return vapi.NewVapiProvider(
 			f.config.Vapi.APIKey,
 			f.config.Vapi.APIBaseURL,
-			f.config.Vapi.WebhookURL,
+			"", // No webhook secret - Vapi doesn't require signature validation
 		), nil
 	// Future provider implementations:
 	// case ProviderTypeTwilio:
