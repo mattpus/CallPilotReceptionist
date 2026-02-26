@@ -6,8 +6,8 @@ import (
 	"encoding/json"
 
 	"github.com/google/uuid"
-	"github.com/CallPilotReceptionist/internal/domain/entities"
-	"github.com/CallPilotReceptionist/internal/domain/errors"
+	"github.com/AlwaysOpenBackend/internal/domain/entities"
+	"github.com/AlwaysOpenBackend/internal/domain/errors"
 )
 
 type InteractionRepositoryImpl struct {

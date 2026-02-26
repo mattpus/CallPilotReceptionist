@@ -6,9 +6,9 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/CallPilotReceptionist/internal/application/dto"
-	"github.com/CallPilotReceptionist/internal/application/services"
-	"github.com/CallPilotReceptionist/pkg/logger"
+	"github.com/AlwaysOpenBackend/internal/application/dto"
+	"github.com/AlwaysOpenBackend/internal/application/services"
+	"github.com/AlwaysOpenBackend/pkg/logger"
 )
 
 type contextKey string

@@ -4,11 +4,11 @@ import (
 	"context"
 	"time"
 
-	"github.com/CallPilotReceptionist/internal/application/dto"
-	"github.com/CallPilotReceptionist/internal/domain/entities"
-	"github.com/CallPilotReceptionist/internal/domain/errors"
-	"github.com/CallPilotReceptionist/internal/infrastructure/database"
-	"github.com/CallPilotReceptionist/pkg/logger"
+	"github.com/AlwaysOpenBackend/internal/application/dto"
+	"github.com/AlwaysOpenBackend/internal/domain/entities"
+	"github.com/AlwaysOpenBackend/internal/domain/errors"
+	"github.com/AlwaysOpenBackend/internal/infrastructure/database"
+	"github.com/AlwaysOpenBackend/pkg/logger"
 )
 
 type InteractionService struct {

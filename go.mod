@@ -1,4 +1,4 @@
-module github.com/CallPilotReceptionist
+module github.com/AlwaysOpenBackend
 
 go 1.23
 

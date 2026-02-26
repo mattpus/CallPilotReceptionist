@@ -3,7 +3,7 @@ package entities
 import (
 	"time"
 
-	"github.com/CallPilotReceptionist/internal/domain/errors"
+	"github.com/AlwaysOpenBackend/internal/domain/errors"
 )
 
 type CallStatus string

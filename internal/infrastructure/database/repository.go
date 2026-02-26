@@ -4,7 +4,7 @@ import (
 	"context"
 	"time"
 
-	"github.com/CallPilotReceptionist/internal/domain/entities"
+	"github.com/AlwaysOpenBackend/internal/domain/entities"
 )
 
 // BusinessRepository defines the interface for business data operations

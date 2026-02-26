@@ -7,10 +7,10 @@ import (
 	"strconv"
 
 	"github.com/gorilla/mux"
-	"github.com/CallPilotReceptionist/internal/application/dto"
-	"github.com/CallPilotReceptionist/internal/application/services"
-	"github.com/CallPilotReceptionist/internal/infrastructure/http/middleware"
-	"github.com/CallPilotReceptionist/pkg/logger"
+	"github.com/AlwaysOpenBackend/internal/application/dto"
+	"github.com/AlwaysOpenBackend/internal/application/services"
+	"github.com/AlwaysOpenBackend/internal/infrastructure/http/middleware"
+	"github.com/AlwaysOpenBackend/pkg/logger"
 )
 
 type CallHandler struct {
