@@ -4,9 +4,9 @@ import (
 	"encoding/json"
 	"net/http"
 
-	"github.com/CallPilotReceptionist/internal/application/dto"
-	"github.com/CallPilotReceptionist/internal/domain/errors"
-	"github.com/CallPilotReceptionist/pkg/logger"
+	"github.com/AlwaysOpenBackend/internal/application/dto"
+	"github.com/AlwaysOpenBackend/internal/domain/errors"
+	"github.com/AlwaysOpenBackend/pkg/logger"
 )
 
 type ErrorMiddleware struct {

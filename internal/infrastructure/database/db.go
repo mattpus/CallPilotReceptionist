@@ -7,8 +7,8 @@ import (
 	"time"
 
 	_ "github.com/lib/pq"
-	"github.com/CallPilotReceptionist/pkg/config"
-	"github.com/CallPilotReceptionist/pkg/logger"
+	"github.com/AlwaysOpenBackend/pkg/config"
+	"github.com/AlwaysOpenBackend/pkg/logger"
 )
 
 type DB struct {

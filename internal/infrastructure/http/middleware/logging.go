@@ -4,7 +4,7 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/CallPilotReceptionist/pkg/logger"
+	"github.com/AlwaysOpenBackend/pkg/logger"
 )
 
 type LoggingMiddleware struct {

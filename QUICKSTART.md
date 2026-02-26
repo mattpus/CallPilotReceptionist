@@ -70,7 +70,7 @@ go run cmd/server/main.go
 
 You should see:
 ```
-{"level":"info","time":"...","message":"Starting CallPilotReceptionist Server","environment":"development","port":"8080"}
+{"level":"info","time":"...","message":"Starting AlwaysOpenBackend Server","environment":"development","port":"8080"}
 {"level":"info","time":"...","message":"Database repositories initialized"}
 {"level":"info","time":"...","message":"Voice provider initialized","provider":"vapi"}
 {"level":"info","time":"...","message":"Business services initialized"}

@@ -4,9 +4,9 @@ import (
 	"context"
 	"testing"
 
-	"github.com/CallPilotReceptionist/internal/application/dto"
-	"github.com/CallPilotReceptionist/internal/domain/entities"
-	"github.com/CallPilotReceptionist/pkg/logger"
+	"github.com/AlwaysOpenBackend/internal/application/dto"
+	"github.com/AlwaysOpenBackend/internal/domain/entities"
+	"github.com/AlwaysOpenBackend/pkg/logger"
 )
 
 func TestBusinessService_GetBusiness(t *testing.T) {

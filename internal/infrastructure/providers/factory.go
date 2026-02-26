@@ -3,9 +3,9 @@ package providers
 import (
 	"fmt"
 
-	"github.com/CallPilotReceptionist/internal/domain/providers"
-	"github.com/CallPilotReceptionist/internal/infrastructure/providers/vapi"
-	"github.com/CallPilotReceptionist/pkg/config"
+	"github.com/AlwaysOpenBackend/internal/domain/providers"
+	"github.com/AlwaysOpenBackend/internal/infrastructure/providers/vapi"
+	"github.com/AlwaysOpenBackend/pkg/config"
 )
 
 type ProviderType string

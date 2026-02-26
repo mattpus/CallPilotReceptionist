@@ -1,4 +1,4 @@
-# CallPilotReceptionist API Documentation
+# AlwaysOpenBackend API Documentation
 
 Base URL: `http://localhost:8080`
 

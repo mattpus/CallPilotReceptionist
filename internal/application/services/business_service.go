@@ -5,9 +5,9 @@ import (
 	"errors"
 	"time"
 
-	"github.com/CallPilotReceptionist/internal/application/dto"
-	"github.com/CallPilotReceptionist/internal/infrastructure/database"
-	"github.com/CallPilotReceptionist/pkg/logger"
+	"github.com/AlwaysOpenBackend/internal/application/dto"
+	"github.com/AlwaysOpenBackend/internal/infrastructure/database"
+	"github.com/AlwaysOpenBackend/pkg/logger"
 )
 
 var ErrBusinessNotFound = errors.New("business not found")

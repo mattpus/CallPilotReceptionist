@@ -12,8 +12,8 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/CallPilotReceptionist/internal/domain/errors"
-	"github.com/CallPilotReceptionist/internal/domain/providers"
+	"github.com/AlwaysOpenBackend/internal/domain/errors"
+	"github.com/AlwaysOpenBackend/internal/domain/providers"
 )
 
 type VapiProvider struct {

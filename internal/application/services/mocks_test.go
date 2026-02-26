@@ -5,8 +5,8 @@ import (
 	"errors"
 
 	"github.com/google/uuid"
-	"github.com/CallPilotReceptionist/internal/domain/entities"
-	"github.com/CallPilotReceptionist/internal/domain/providers"
+	"github.com/AlwaysOpenBackend/internal/domain/entities"
+	"github.com/AlwaysOpenBackend/internal/domain/providers"
 )
 
 // ========== Mock VoiceProvider ==========

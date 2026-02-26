@@ -1,4 +1,4 @@
-# CallPilotReceptionist
+# AlwaysOpenBackend
 
 A scalable Go-based backend for integrating Vapi AI voice assistants with small businesses. This system provides call handling, appointment scheduling, and a comprehensive dashboard for monitoring AI voice interactions.
 
@@ -107,8 +107,8 @@ The project follows **Hexagonal Architecture** (Ports and Adapters) principles:
 
 1. **Clone the repository**
    ```bash
-   git clone https://github.com/mattpus/CallPilotReceptionist.git
-   cd CallPilotReceptionist
+   git clone https://github.com/mattpus/AlwaysOpenBackend.git
+   cd AlwaysOpenBackend
    ```
 
 2. **Set up Supabase Database**
@@ -379,7 +379,7 @@ Follow standard Go conventions:
 ## 🆘 Support
 
 For issues and questions:
-- GitHub Issues: https://github.com/mattpus/CallPilotReceptionist/issues
+- GitHub Issues: https://github.com/mattpus/AlwaysOpenBackend/issues
 - Documentation: See `/docs` folder
 - Security: See `SECURITY.md`
 
